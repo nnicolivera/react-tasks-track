@@ -1,58 +1,52 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import Tasks from './components/Tasks'
 import AddTask from './components/AddTask'
+import taskService from './services/tasks'
 
 export default function App() {
   const [showAddTask, setShowAddTask] = useState(false)
-  const [tasks, setTasks] = useState([
-    {
-      "id": 1,
-      "text": "Doctors Appointment",
-      "date": "Feb 5th at 2:30pm",
-      "reminder": false
-    },
-    {
-      "id": 3,
-      "text": "Grocery Shopping",
-      "date": "Feb 5th at 2:30pm",
-      "reminder": false
-    },
-    {
-      "id": 6,
-      "text": "Test Shipping",
-      "date": "Feb 5th at 2:30pm",
-      "reminder": true
-    },
-    {
-      "id": 4,
-      "text": "Move to Mandeville",
-      "date": "Feb 27 at 5:00PM",
-      "reminder": true
-    },
-    {
-      "text": "Leave NK",
-      "date": "Friday coming",
-      "reminder": true,
-      "id": 5
-    }
-  ])
+  const [tasks, setTasks] = useState([])
+
+  useEffect(() => {
+    taskService
+      .getAll()
+      .then(initialTasks => {
+        setTasks(initialTasks)
+      })
+  }, [])
 
   // Add Task
   const addTask = (task) => {
-    const id = Math.floor(Math.random() * 1000) + 1
-    const newTask = { id, ...task }
-    setTasks([...tasks, newTask])
+    taskService
+      .add(task)
+      .then(newTask => {
+        setTasks(tasks.concat(newTask))
+      })
   }
 
   // Delete tasks
   const deleteTask = (id) => {
-    setTasks(tasks.filter((task) => task.id !== id))
+    taskService
+      .remove(id, tasks)
+      .then(() => {
+        setTasks(tasks.filter((task) => task.id !== id))
+      })
   }
 
-  // Toggle reminder2
+  // Toggle reminder
   const toggleReminder = (id) => {
-    setTasks(tasks.map(task => task.id === id ? { ...task, reminder: !task.reminder } : task))
+    const taskToToggle = taskService.get(id)
+    const updTask = {
+      ...taskToToggle,
+      reminder: !taskToToggle.reminder
+    }
+
+    taskService
+      .update(id, updTask)
+      .then(updTask => {
+        setTasks(tasks.map(task => task.id === id ? { ...updTask, reminder: !updTask.reminder } : updTask))
+      })
   }
 
   return (
